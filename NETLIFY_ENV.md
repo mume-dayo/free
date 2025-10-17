@@ -43,18 +43,17 @@ WEBHOOK_CHANNEL_ID=your_notification_channel_id_here
 ### 3. Netlify Configuration
 
 ```
-NETLIFY_URL=https://your-site-name.netlify.app
+NETLIFY_URL=https://niggered.netlify.app
 ```
 - NetlifyでデプロイされたサイトのURL
-- 初回デプロイ後に自動で割り当てられる
-- Site settings → Site details → Site information → Site URL からコピー
+- このプロジェクトのURL: `https://niggered.netlify.app`
 
 ```
-REDIRECT_URI=https://your-site-name.netlify.app/.netlify/functions/callback
+REDIRECT_URI=https://niggered.netlify.app/.netlify/functions/callback
 ```
 - OAuth2のコールバックURL
 - `NETLIFY_URL`に`/.netlify/functions/callback`を追加したもの
-- Discord Developer Portal → OAuth2 → Redirects にも同じURLを登録する必要があります
+- Discord Developer Portal → OAuth2 → Redirects にも`https://niggered.netlify.app/.netlify/functions/callback`を登録する必要があります
 
 ## 設定不要な環境変数
 
