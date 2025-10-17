@@ -15,7 +15,6 @@ export async function handler(event, context) {
   const redirectUri = process.env.REDIRECT_URI;
 
   try {
-    // Step 1: Exchange code for access token
     const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
       method: 'POST',
       headers: {

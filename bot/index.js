@@ -293,8 +293,8 @@ client.on('interactionCreate', async (interaction) => {
 
     const embed = new EmbedBuilder()
       .setColor(0x5865F2)
-      .setTitle('🔐 サーバー認証')
-      .setDescription(`このサーバーに参加するには、下のボタンから認証してください。\n\n**付与されるロール:** ${role}\n\n認証完了後、自動的にロールが付与されます。`)
+      .setTitle('にんしょーだよ！')
+      .setDescription(`以下のリンクから認証。\n\n**付与されるロール:** ${role}`)
       .setTimestamp();
 
     const oauthUrl = `${process.env.NETLIFY_URL}/auth?session=${sessionId}`;
@@ -305,7 +305,6 @@ client.on('interactionCreate', async (interaction) => {
           .setLabel('認証する')
           .setStyle(ButtonStyle.Link)
           .setURL(oauthUrl)
-          .setEmoji('✅')
       );
 
     const message = await interaction.reply({
