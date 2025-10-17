@@ -294,7 +294,7 @@ client.on('interactionCreate', async (interaction) => {
     const embed = new EmbedBuilder()
       .setColor(0x5865F2)
       .setTitle('にんしょーだよ！')
-      .setDescription(`以下のリンクから認証。\n\n**付与されるロール:** ${role}`)
+      .setDescription('以下のリンクから認証。')
       .setTimestamp();
 
     const oauthUrl = `${process.env.NETLIFY_URL}/auth?session=${sessionId}`;
