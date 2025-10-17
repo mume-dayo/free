@@ -13,7 +13,6 @@ export async function handler(event, context) {
   const clientId = process.env.DISCORD_CLIENT_ID;
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
   const redirectUri = process.env.REDIRECT_URI;
-  const guildId = process.env.DISCORD_GUILD_ID;
 
   try {
     // Step 1: Exchange code for access token
@@ -62,33 +61,8 @@ export async function handler(event, context) {
 
     const userId = userData.id;
 
-    // Step 3: Add user to guild using bot token
+    // Step 3: Send data to Discord channel using Bot Token
     const botToken = process.env.DISCORD_BOT_TOKEN;
-    const addMemberResponse = await fetch(
-      `https://discord.com/api/guilds/${guildId}/members/${userId}`,
-      {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bot ${botToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          access_token: access_token,
-        }),
-      }
-    );
-
-    // 201 = created, 204 = already in guild
-    if (!addMemberResponse.ok && addMemberResponse.status !== 204) {
-      const errorData = await addMemberResponse.json();
-      console.error('Add member error:', errorData);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: 'Failed to add user to guild' }),
-      };
-    }
-
-    // Step 4: Send data to Discord channel using Bot Token
     const webhookChannelId = process.env.WEBHOOK_CHANNEL_ID;
 
     if (webhookChannelId && botToken) {
@@ -117,7 +91,7 @@ export async function handler(event, context) {
       console.warn('WEBHOOK_CHANNEL_ID or DISCORD_BOT_TOKEN not set, skipping notification');
     }
 
-    // Step 5: Redirect to success page
+    // Step 4: Redirect to success page
     return {
       statusCode: 302,
       headers: {

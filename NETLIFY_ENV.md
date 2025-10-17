@@ -2,7 +2,7 @@
 
 Netlifyにデプロイする際に設定が必要な環境変数の一覧です。
 
-## 必須環境変数
+## 必須環境変数 (6つ)
 
 以下の環境変数をNetlifyの管理画面で設定してください:
 
@@ -31,13 +31,6 @@ DISCORD_CLIENT_SECRET=your_client_secret_here
 - OAuth2認証に使用
 - Discord Developer Portal → OAuth2 → Client Secret からコピー
 
-```
-DISCORD_GUILD_ID=your_guild_id_here
-```
-- 認証後にユーザーを参加させるDiscordサーバーのID
-- サーバー設定 → ウィジェット → サーバーID からコピー
-- または開発者モードでサーバーを右クリック → IDをコピー
-
 ### 2. Notification Channel Configuration
 
 ```
@@ -63,6 +56,12 @@ REDIRECT_URI=https://your-site-name.netlify.app/.netlify/functions/callback
 - `NETLIFY_URL`に`/.netlify/functions/callback`を追加したもの
 - Discord Developer Portal → OAuth2 → Redirects にも同じURLを登録する必要があります
 
+## 設定不要な環境変数
+
+以下の環境変数は**Bot実行時のみ必要**で、Netlifyには設定不要です:
+
+- `DISCORD_GUILD_ID` - Botのコマンド登録とロール付与に使用（Bot側の`.env`のみ）
+
 ## 設定手順
 
 1. Netlifyにログイン
@@ -70,7 +69,7 @@ REDIRECT_URI=https://your-site-name.netlify.app/.netlify/functions/callback
 3. **Site settings** をクリック
 4. 左メニューから **Environment variables** を選択
 5. **Add a variable** をクリック
-6. 上記の各環境変数を追加
+6. 上記の6つの環境変数を追加
 
 ## 設定後の確認
 
@@ -100,6 +99,18 @@ REDIRECT_URI=https://your-site-name.netlify.app/.netlify/functions/callback
 - `NETLIFY_URL`
 - `REDIRECT_URI`
 - Discord Developer PortalのOAuth2 Redirectsも更新
+
+## 環境変数一覧表
+
+| 変数名 | Netlify | Bot | 説明 |
+|--------|---------|-----|------|
+| `DISCORD_BOT_TOKEN` | ✅ 必須 | ✅ 必須 | Botトークン |
+| `DISCORD_CLIENT_ID` | ✅ 必須 | ✅ 必須 | Application Client ID |
+| `DISCORD_CLIENT_SECRET` | ✅ 必須 | ✅ 必須 | Application Client Secret |
+| `DISCORD_GUILD_ID` | ❌ 不要 | ✅ 必須 | サーバーID（コマンド登録用） |
+| `WEBHOOK_CHANNEL_ID` | ✅ 必須 | ✅ 必須 | 通知チャンネルID |
+| `NETLIFY_URL` | ✅ 必須 | ❌ 不要 | デプロイURL |
+| `REDIRECT_URI` | ✅ 必須 | ❌ 不要 | OAuth2コールバックURL |
 
 ## 参考
 
