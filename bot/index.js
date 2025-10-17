@@ -244,25 +244,7 @@ client.on('messageCreate', async (message) => {
       }
     }
 
-    // パネルメッセージを更新
-    if (session.messageId && session.channelId) {
-      try {
-        const channel = await client.channels.fetch(session.channelId);
-        const panelMessage = await channel.messages.fetch(session.messageId);
-
-        const currentEmbed = panelMessage.embeds[0];
-        const authenticatedUsersText = currentEmbed.description.includes('認証済みユーザー:')
-          ? currentEmbed.description
-          : currentEmbed.description + '\n\n**認証済みユーザー:**';
-
-        const updatedEmbed = EmbedBuilder.from(currentEmbed)
-          .setDescription(`${authenticatedUsersText}\n• <@${userId}>`);
-
-        await panelMessage.edit({ embeds: [updatedEmbed] });
-      } catch (error) {
-        console.error('メッセージ更新エラー:', error);
-      }
-    }
+    // パネルメッセージの更新は行わない（認証済みユーザーのリストを表示しない）
 
     // 処理完了後、メッセージを削除（オプション）
     await message.delete().catch(() => {});
