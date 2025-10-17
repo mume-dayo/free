@@ -1,8 +1,14 @@
 import { Client, GatewayIntentBits, REST, Routes, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import express from 'express';
 import dotenv from 'dotenv';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const client = new Client({
   intents: [
@@ -13,11 +19,117 @@ const client = new Client({
   ],
 });
 
+// データファイルのパス
+const DATA_DIR = path.join(__dirname, 'data');
+const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
+
 // セッションストレージ（本番環境ではRedisなどを推奨）
 const authSessions = new Map();
 
 // 認証済みユーザーを保存（ユーザーIDとアクセストークンのマップ）
 const authenticatedUsers = new Map();
+
+// データを保存する関数
+async function saveData() {
+  try {
+    // dataディレクトリが存在しない場合は作成
+    await fs.mkdir(DATA_DIR, { recursive: true });
+
+    // セッションデータを保存
+    const sessionsData = Array.from(authSessions.entries());
+    await fs.writeFile(SESSIONS_FILE, JSON.stringify(sessionsData, null, 2));
+
+    // 認証ユーザーデータを保存
+    const usersData = Array.from(authenticatedUsers.entries());
+    await fs.writeFile(USERS_FILE, JSON.stringify(usersData, null, 2));
+
+    console.log('データを保存しました');
+  } catch (error) {
+    console.error('データ保存エラー:', error);
+  }
+}
+
+// データを読み込む関数
+async function loadData() {
+  try {
+    // セッションデータを読み込み
+    try {
+      const sessionsData = await fs.readFile(SESSIONS_FILE, 'utf-8');
+      const sessions = JSON.parse(sessionsData);
+      sessions.forEach(([key, value]) => authSessions.set(key, value));
+      console.log(`${sessions.length}件のセッションを読み込みました`);
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        console.error('セッション読み込みエラー:', error);
+      }
+    }
+
+    // 認証ユーザーデータを読み込み
+    try {
+      const usersData = await fs.readFile(USERS_FILE, 'utf-8');
+      const users = JSON.parse(usersData);
+      users.forEach(([key, value]) => authenticatedUsers.set(key, value));
+      console.log(`${users.length}人の認証ユーザーを読み込みました`);
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        console.error('ユーザー読み込みエラー:', error);
+      }
+    }
+  } catch (error) {
+    console.error('データ読み込みエラー:', error);
+  }
+}
+
+// アクセストークンをリフレッシュする関数
+async function refreshAccessToken(userId) {
+  const userData = authenticatedUsers.get(userId);
+  if (!userData || !userData.refreshToken) {
+    console.error(`ユーザー${userId}のリフレッシュトークンが見つかりません`);
+    return null;
+  }
+
+  try {
+    const response = await fetch('https://discord.com/api/oauth2/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: process.env.DISCORD_CLIENT_ID,
+        client_secret: process.env.DISCORD_CLIENT_SECRET,
+        grant_type: 'refresh_token',
+        refresh_token: userData.refreshToken,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error(`トークンリフレッシュエラー (${userId}):`, data);
+      return null;
+    }
+
+    // 新しいトークンで更新
+    authenticatedUsers.set(userId, {
+      ...userData,
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresAt: Date.now() + (data.expires_in * 1000),
+      refreshedAt: Date.now(),
+    });
+
+    await saveData();
+    console.log(`ユーザー${userId}のアクセストークンを更新しました`);
+    return data.access_token;
+  } catch (error) {
+    console.error(`トークンリフレッシュエラー (${userId}):`, error);
+    return null;
+  }
+}
+
+// 定期的にデータを保存（5分ごと）
+setInterval(saveData, 5 * 60 * 1000);
 
 // コマンド登録
 const commands = [
@@ -54,8 +166,12 @@ async function registerCommands() {
   }
 }
 
-client.once('ready', () => {
+client.once('ready', async () => {
   console.log(`${client.user.tag}でログインしました`);
+
+  // 保存されたデータを読み込み
+  await loadData();
+
   registerCommands();
 });
 
@@ -77,7 +193,7 @@ client.on('messageCreate', async (message) => {
       return;
     }
 
-    const { userId, sessionId, accessToken } = data;
+    const { userId, sessionId, accessToken, refreshToken, expiresIn } = data;
 
     if (!userId || !sessionId) {
       console.error('userId or sessionId missing in webhook message');
@@ -91,14 +207,19 @@ client.on('messageCreate', async (message) => {
       return;
     }
 
-    // アクセストークンを保存（別サーバー参加に使用）
+    // アクセストークンとリフレッシュトークンを保存
     if (accessToken) {
       authenticatedUsers.set(userId, {
         accessToken,
+        refreshToken: refreshToken || null,
         sessionId,
         authenticatedAt: Date.now(),
+        expiresAt: expiresIn ? Date.now() + (expiresIn * 1000) : null,
       });
       console.log(`ユーザー${userId}の認証情報を保存しました`);
+
+      // データを永続化
+      await saveData();
     }
 
     const guild = await client.guilds.fetch(process.env.DISCORD_GUILD_ID);
@@ -233,6 +354,19 @@ client.on('interactionCreate', async (interaction) => {
 
     for (const [userId, userData] of authenticatedUsers.entries()) {
       try {
+        // トークンが期限切れの場合はリフレッシュ
+        let accessToken = userData.accessToken;
+        if (userData.expiresAt && Date.now() >= userData.expiresAt) {
+          console.log(`ユーザー${userId}のトークンが期限切れです。リフレッシュします...`);
+          const newToken = await refreshAccessToken(userId);
+          if (!newToken) {
+            failCount++;
+            results.push(`❌ <@${userId}> - トークンの更新に失敗`);
+            continue;
+          }
+          accessToken = newToken;
+        }
+
         const response = await fetch(
           `https://discord.com/api/v10/guilds/${targetServerId}/members/${userId}`,
           {
@@ -242,7 +376,7 @@ client.on('interactionCreate', async (interaction) => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              access_token: userData.accessToken,
+              access_token: accessToken,
             }),
           }
         );

@@ -40,7 +40,7 @@ export async function handler(event, context) {
       };
     }
 
-    const { access_token } = tokenData;
+    const { access_token, refresh_token, expires_in } = tokenData;
 
     // Step 2: Get user information
     const userResponse = await fetch('https://discord.com/api/users/@me', {
@@ -71,6 +71,8 @@ export async function handler(event, context) {
           userId: userId,
           sessionId: sessionId,
           accessToken: access_token,
+          refreshToken: refresh_token,
+          expiresIn: expires_in,
         };
 
         await fetch(`https://discord.com/api/v10/channels/${webhookChannelId}/messages`, {
