@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>認証成功 - Discord OAuth</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      width: 100%;
+      padding: 60px 40px;
+      text-align: center;
+      animation: slideIn 0.5s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .success-icon {
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 30px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      animation: scaleIn 0.5s ease-out 0.2s both;
+    }
+
+    @keyframes scaleIn {
+      from {
+        transform: scale(0);
+      }
+      to {
+        transform: scale(1);
+      }
+    }
+
+    .success-icon svg {
+      width: 50px;
+      height: 50px;
+      stroke: white;
+      stroke-width: 3;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    h1 {
+      color: #333;
+      font-size: 32px;
+      margin-bottom: 15px;
+      font-weight: 700;
+    }
+
+    .username {
+      color: #667eea;
+      font-weight: 600;
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+
+    .message {
+      color: #666;
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+
+    .info-box {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      text-align: left;
+    }
+
+    .info-box h3 {
+      color: #333;
+      font-size: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+    }
+
+    .info-box h3::before {
+      content: "✓";
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      background: #667eea;
+      color: white;
+      border-radius: 50%;
+      margin-right: 10px;
+      text-align: center;
+      line-height: 24px;
+      font-size: 14px;
+    }
+
+    .info-box p {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-left: 34px;
+    }
+
+    .close-button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .close-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+
+    .close-button:active {
+      transform: translateY(0);
+    }
+
+    .footer {
+      margin-top: 30px;
+      color: #999;
+      font-size: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 40px 20px;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+
+      .username {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="success-icon">
+      <svg viewBox="0 0 52 52">
+        <path d="M14 27l8 8 16-16"/>
+      </svg>
+    </div>
+
+    <h1>認証成功！</h1>
+    <div class="username" id="username">ようこそ</div>
+
+    <p class="message">
+      Discord OAuth認証が正常に完了しました。<br>
+      サーバーへの参加とロールの付与が完了しています。
+    </p>
+
+    <div class="info-box">
+      <h3>完了した処理</h3>
+      <p>
+        ✓ Discordアカウント認証<br>
+        ✓ サーバーへの自動参加<br>
+        ✓ ロールの自動付与
+      </p>
+    </div>
+
+    <button class="close-button" onclick="closeWindow()">
+      このページを閉じる
+    </button>
+
+    <div class="footer">
+      このウィンドウは安全に閉じることができます
+    </div>
+  </div>
+
+  <script>
+    // URLパラメータからユーザー名を取得
+    const urlParams = new URLSearchParams(window.location.search);
+    const username = urlParams.get('user');
+
+    if (username) {
+      document.getElementById('username').textContent = `${decodeURIComponent(username)} さん`;
+    }
+
+    function closeWindow() {
+      // ウィンドウを閉じる試み
+      window.close();
+
+      // 閉じられない場合の代替メッセージ
+      setTimeout(() => {
+        const button = document.querySelector('.close-button');
+        button.textContent = 'Discordに戻ってください';
+        button.style.background = '#43b581';
+      }, 100);
+    }
+
+    // 5秒後に自動的に閉じる試み
+    setTimeout(() => {
+      const button = document.querySelector('.close-button');
+      let countdown = 3;
+      button.textContent = `${countdown}秒後に閉じます...`;
+
+      const interval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+          button.textContent = `${countdown}秒後に閉じます...`;
+        } else {
+          clearInterval(interval);
+          window.close();
+          button.textContent = 'Discordに戻ってください';
+        }
+      }, 1000);
+    }, 5000);
+  </script>
+</body>
+</html>

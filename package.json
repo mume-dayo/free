@@ -1,0 +1,21 @@
+{
+  "name": "discord-oauth-bot",
+  "version": "1.0.0",
+  "description": "Discord OAuth2 bot with guild.join and role assignment",
+  "main": "bot/index.js",
+  "type": "module",
+  "scripts": {
+    "bot": "node bot/index.js",
+    "dev": "netlify dev",
+    "build": "echo 'No build step required'"
+  },
+  "keywords": ["discord", "oauth2", "bot", "netlify"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "express": "^4.18.2",
+    "node-fetch": "^3.3.2",
+    "dotenv": "^16.4.1"
+  }
+}

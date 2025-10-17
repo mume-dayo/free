@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Discord OAuth Bot</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 600px;
+      width: 100%;
+      padding: 60px 40px;
+      text-align: center;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 40px;
+    }
+
+    h1 {
+      color: #333;
+      font-size: 32px;
+      margin-bottom: 15px;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 16px;
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+
+    .feature {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      text-align: left;
+    }
+
+    .feature h3 {
+      color: #333;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .feature p {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .footer {
+      margin-top: 40px;
+      color: #999;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">🤖</div>
+    <h1>Discord OAuth Bot</h1>
+    <p class="subtitle">
+      自動サーバー参加とロール付与を行うDiscord認証システム
+    </p>
+
+    <div class="feature">
+      <h3>🔐 OAuth2認証</h3>
+      <p>Discordアカウントを使用した安全な認証</p>
+    </div>
+
+    <div class="feature">
+      <h3>🎯 自動サーバー参加</h3>
+      <p>認証後、指定されたDiscordサーバーに自動参加</p>
+    </div>
+
+    <div class="feature">
+      <h3>🏷️ 自動ロール付与</h3>
+      <p>認証完了後、指定されたロールを自動付与</p>
+    </div>
+
+    <div class="feature">
+      <h3>📢 ユーザー呼び出し</h3>
+      <p>/callコマンドで認証済みユーザーを一括呼び出し</p>
+    </div>
+
+    <div class="footer">
+      認証を開始するには、Discordサーバーの認証パネルから開始してください
+    </div>
+  </div>
+</body>
+</html>
