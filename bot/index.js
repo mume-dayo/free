@@ -294,8 +294,7 @@ client.on('interactionCreate', async (interaction) => {
     const embed = new EmbedBuilder()
       .setColor(0x5865F2)
       .setTitle('にんしょーだよ！')
-      .setDescription('以下のリンクから認証。')
-      .setTimestamp();
+      .setDescription('以下のリンクから認証。');
 
     // Discord OAuth2 URLを直接生成
     const redirectUri = encodeURIComponent(process.env.REDIRECT_URI);
