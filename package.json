@@ -7,15 +7,21 @@
   "scripts": {
     "bot": "node bot/index.js",
     "dev": "netlify dev",
-    "build": "echo 'No build step required'"
+    "build": "echo 'Build completed successfully'"
   },
   "keywords": ["discord", "oauth2", "bot", "netlify"],
   "author": "",
   "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "discord.js": "^14.14.1",
     "express": "^4.18.2",
     "node-fetch": "^3.3.2",
     "dotenv": "^16.4.1"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
   }
 }
