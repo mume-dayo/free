@@ -35,15 +35,7 @@ const commands = [
   },
   {
     name: 'call',
-    description: '認証済みユーザーを別のサーバーに参加させる',
-    options: [
-      {
-        name: 'server_id',
-        type: 3, // STRING type
-        description: '参加させる先のサーバーID',
-        required: true,
-      },
-    ],
+    description: '認証済みユーザーをこのサーバーに参加させる',
   },
 ];
 
@@ -219,7 +211,8 @@ client.on('interactionCreate', async (interaction) => {
 
     await interaction.deferReply();
 
-    const targetServerId = interaction.options.getString('server_id');
+    // 現在のサーバーIDを取得
+    const targetServerId = interaction.guildId;
 
     // 認証済みユーザーを取得
     if (authenticatedUsers.size === 0) {
@@ -230,19 +223,10 @@ client.on('interactionCreate', async (interaction) => {
       return interaction.editReply({ embeds: [embed] });
     }
 
-    // 対象サーバーが存在するか確認
-    let targetGuild;
-    try {
-      targetGuild = await client.guilds.fetch(targetServerId);
-    } catch (error) {
-      const embed = new EmbedBuilder()
-        .setColor(0xFF0000)
-        .setTitle('❌ エラー')
-        .setDescription(`サーバーID \`${targetServerId}\` が見つかりませんでした。\nBotがそのサーバーに参加していることを確認してください。`);
-      return interaction.editReply({ embeds: [embed] });
-    }
+    // 現在のサーバーを取得
+    const targetGuild = interaction.guild;
 
-    // 各ユーザーを別サーバーに参加させる
+    // 各ユーザーをこのサーバーに参加させる
     let successCount = 0;
     let failCount = 0;
     const results = [];
@@ -282,8 +266,8 @@ client.on('interactionCreate', async (interaction) => {
 
     const embed = new EmbedBuilder()
       .setColor(successCount > 0 ? 0x43B581 : 0xFF0000)
-      .setTitle('📢 別サーバーへの参加処理完了')
-      .setDescription(`**対象サーバー:** ${targetGuild.name} (\`${targetServerId}\`)\n\n**結果:**\n成功: ${successCount}人\n失敗: ${failCount}人`)
+      .setTitle('📢 サーバー参加処理完了')
+      .setDescription(`**対象サーバー:** ${targetGuild.name}\n\n**結果:**\n成功: ${successCount}人\n失敗: ${failCount}人`)
       .addFields({
         name: '詳細',
         value: results.length > 0 ? results.slice(0, 20).join('\n') : 'なし',
