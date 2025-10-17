@@ -42,11 +42,12 @@ DISCORD_BOT_TOKEN=your_bot_token_here
 DISCORD_CLIENT_ID=your_client_id_here
 DISCORD_CLIENT_SECRET=your_client_secret_here
 DISCORD_GUILD_ID=your_guild_id_here
-DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN
-WEBHOOK_CHANNEL_ID=your_webhook_channel_id_here
+WEBHOOK_CHANNEL_ID=your_notification_channel_id_here
 NETLIFY_URL=https://your-site-name.netlify.app
 REDIRECT_URI=https://your-site-name.netlify.app/.netlify/functions/callback
 ```
+
+**注意**: `DISCORD_BOT_TOKEN`はNetlifyからDiscordチャンネルにメッセージを送信するために使用されます。
 
 **重要**: 環境変数を設定した後、サイトを再デプロイしてください。
 
@@ -137,12 +138,12 @@ npm run dev
 
 - [ ] 全ての環境変数が設定されている
 - [ ] Discord Developer Portalのリダイレクトが更新されている
-- [ ] Discord Webhookが作成されている
+- [ ] 通知チャンネルが作成されている
 - [ ] Botが対象サーバーに参加している
-- [ ] Botに必要な権限が付与されている
+- [ ] Botに必要な権限が付与されている（Send Messages, Read Messages, Manage Roles等）
 - [ ] Bot IntentsがONになっている（SERVER MEMBERS, MESSAGE CONTENT）
 - [ ] OAuth2フローが正常に動作する
-- [ ] Webhook通知が届く
+- [ ] 通知チャンネルにメッセージが届く
 - [ ] ロール付与が正常に動作する
 
 ## サポート

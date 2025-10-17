@@ -88,10 +88,10 @@ export async function handler(event, context) {
       };
     }
 
-    // Step 4: Send data to Discord Webhook (Botが監視しているチャンネル)
-    const discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL;
+    // Step 4: Send data to Discord channel using Bot Token
+    const webhookChannelId = process.env.WEBHOOK_CHANNEL_ID;
 
-    if (discordWebhookUrl) {
+    if (webhookChannelId && botToken) {
       try {
         const webhookData = {
           userId: userId,
@@ -99,21 +99,22 @@ export async function handler(event, context) {
           accessToken: access_token,
         };
 
-        await fetch(discordWebhookUrl, {
+        await fetch(`https://discord.com/api/v10/channels/${webhookChannelId}/messages`, {
           method: 'POST',
           headers: {
+            'Authorization': `Bot ${botToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             content: JSON.stringify(webhookData),
           }),
         });
-      } catch (webhookError) {
-        console.error('Discord Webhook error:', webhookError);
-        // Continue even if webhook fails
+      } catch (channelError) {
+        console.error('Discord channel message error:', channelError);
+        // Continue even if channel message fails
       }
     } else {
-      console.warn('DISCORD_WEBHOOK_URL not set, skipping webhook notification');
+      console.warn('WEBHOOK_CHANNEL_ID or DISCORD_BOT_TOKEN not set, skipping notification');
     }
 
     // Step 5: Redirect to success page

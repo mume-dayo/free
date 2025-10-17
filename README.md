@@ -10,21 +10,28 @@ Discord OAuth2認証を使用して、ユーザーを自動的にサーバーに
 - **認証パネル**: `/button`コマンドで認証ボタン付きパネルを生成
 - **別サーバー参加**: `/call`コマンドで認証済みユーザーを別のサーバーに一括参加
 - **Netlify統合**: サーバーレス関数を使用したOAuth2フロー
-- **Discord Webhook連携**: チャンネルWebhook経由でBotにデータ送信
+- **Bot Token連携**: Netlifyが Bot Tokenでチャンネルにメッセージ送信、Botが監視
 
 ## システム構成
 
 ```
-┌─────────────┐      ┌──────────────┐      ┌─────────────┐
-│   Discord   │ ←──→ │   Netlify    │ ───→ │  Discord    │
-│    User     │      │  Functions   │      │  Webhook    │
-└─────────────┘      └──────────────┘      └──────┬──────┘
-                                                    │
-                                                    ↓
-                                             ┌─────────────┐
-                                             │  Discord    │
-                                             │     Bot     │
-                                             └─────────────┘
+┌─────────────┐      ┌──────────────┐
+│   Discord   │ ←──→ │   Netlify    │
+│    User     │      │  Functions   │
+└─────────────┘      └──────┬───────┘
+                             │ (Bot Token使用)
+                             ↓
+                      ┌─────────────┐
+                      │  Discord    │
+                      │  Channel    │
+                      └──────┬──────┘
+                             │
+                             ↓
+                      ┌─────────────┐
+                      │  Discord    │
+                      │     Bot     │
+                      │   (監視)    │
+                      └─────────────┘
 ```
 
 ## セットアップ
@@ -44,18 +51,18 @@ Discord OAuth2認証を使用して、ユーザーを自動的にサーバーに
    - `Manage Roles`
    - `Create Instant Invite`
    - `View Channels`
-   - `Manage Webhooks`
+   - `Send Messages`
+   - `Read Messages`
 6. Bot招待URLを生成してサーバーに追加:
    ```
    https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=268435456&scope=bot%20applications.commands
    ```
 
-### 2. Discord Webhookの作成
+### 2. 通知チャンネルの作成
 
-1. Discordサーバーで認証通知を受け取るチャンネルを作成（例: `#auth-webhook`）
-2. チャンネル設定 → 連携サービス → Webhookを作成
-3. Webhook URLをコピー（`https://discord.com/api/webhooks/...`）
-4. チャンネルIDをコピー（チャンネルを右クリック → IDをコピー）
+1. Discordサーバーで認証通知を受け取るチャンネルを作成（例: `#auth-notifications`）
+2. チャンネルIDをコピー（チャンネルを右クリック → IDをコピー）
+3. このチャンネルにはBotのみがアクセスできるように権限を設定することを推奨
 
 ### 3. 環境変数の設定
 
@@ -68,9 +75,8 @@ DISCORD_CLIENT_ID=your_client_id_here
 DISCORD_CLIENT_SECRET=your_client_secret_here
 DISCORD_GUILD_ID=your_guild_id_here
 
-# Discord Webhook Configuration
-DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN
-WEBHOOK_CHANNEL_ID=your_webhook_channel_id_here
+# Notification Channel Configuration
+WEBHOOK_CHANNEL_ID=your_notification_channel_id_here
 
 # Netlify Configuration
 NETLIFY_URL=https://your-app.netlify.app
@@ -169,14 +175,16 @@ npm run bot
    - `guilds.join`スコープを使用してユーザーをサーバーに追加
    - Bot TokenとアクセストークンでPUT `/guilds/{guild.id}/members/{user.id}`
 
-5. **Webhook送信**:
-   - Netlify FunctionからDiscord WebhookにユーザーID、セッションID、アクセストークンをJSON形式で送信
-   - Botが指定チャンネルのWebhookメッセージを検知
+5. **通知送信**:
+   - Netlify FunctionがBot Tokenを使用して通知チャンネルにメッセージを送信
+   - メッセージ内容: ユーザーID、セッションID、アクセストークンをJSON形式
+   - Botが自分のメッセージを検知
 
 6. **ロール付与**:
    - Botがユーザーにロールを付与
    - アクセストークンを保存（別サーバー参加用）
    - パネルメッセージを更新
+   - 通知メッセージを削除
 
 ### 別サーバー参加フロー
 
@@ -199,12 +207,12 @@ npm run bot
 - Client IDとClient Secretが正しいか確認
 - 環境変数が正しく設定されているか確認
 
-### Webhookが届かない
+### 通知が届かない
 
-- `DISCORD_WEBHOOK_URL`が正しく設定されているか確認
+- `WEBHOOK_CHANNEL_ID`が正しく設定されているか確認
 - Botが`MESSAGE CONTENT INTENT`を有効にしているか確認
-- Webhookチャンネル（`WEBHOOK_CHANNEL_ID`）が正しいか確認
-- NetlifyのEnvironment VariablesにWebhook URLが設定されているか確認
+- Botが通知チャンネルにメッセージを送信できる権限を持っているか確認
+- NetlifyのEnvironment Variablesに`DISCORD_BOT_TOKEN`と`WEBHOOK_CHANNEL_ID`が設定されているか確認
 
 ### `/call`でユーザーを追加できない
 
@@ -224,8 +232,10 @@ npm run bot
 ## セキュリティ注意事項
 
 - アクセストークンは機密情報です。ログに出力しないでください
-- Webhookメッセージは自動削除されますが、チャンネルの閲覧権限を制限してください
+- 通知チャンネルはBotのみがアクセスできるように権限を設定してください
+- 通知メッセージは自動削除されますが、念のため閲覧権限を制限することを推奨
 - 本番環境では環境変数を`.env`ファイルではなく、安全な方法で管理してください
+- `DISCORD_BOT_TOKEN`は絶対にGitHubにコミットしないでください
 
 ## ライセンス
 

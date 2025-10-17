@@ -10,7 +10,6 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildWebhooks,
   ],
 });
 
@@ -68,21 +67,21 @@ client.once('ready', () => {
   registerCommands();
 });
 
-// Webhookチャンネルからのメッセージを監視
+// 認証通知チャンネルからのメッセージを監視
 client.on('messageCreate', async (message) => {
-  // Webhookからのメッセージのみ処理
-  if (!message.webhookId) return;
+  // 自分のBotからのメッセージのみ処理
+  if (message.author.id !== client.user.id) return;
 
-  // 指定されたチャンネルからのWebhookのみ処理
+  // 指定されたチャンネルからのメッセージのみ処理
   if (message.channelId !== process.env.WEBHOOK_CHANNEL_ID) return;
 
   try {
-    // Webhookメッセージからデータを取得（JSON形式を想定）
+    // Botメッセージからデータを取得（JSON形式を想定）
     let data;
     try {
       data = JSON.parse(message.content);
     } catch (error) {
-      console.error('Webhookメッセージのパースエラー:', error);
+      console.error('メッセージのパースエラー:', error);
       return;
     }
 
@@ -152,7 +151,7 @@ client.on('messageCreate', async (message) => {
       }
     }
 
-    // Webhookメッセージを削除（オプション）
+    // 処理完了後、メッセージを削除（オプション）
     await message.delete().catch(() => {});
   } catch (error) {
     console.error('Webhook処理エラー:', error);
