@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>認証成功 - Discord OAuth</title>
+  <title>認証成功 - member bu</title>
   <style>
     * {
       margin: 0;
@@ -195,9 +195,8 @@
     <div class="info-box">
       <h3>完了した処理</h3>
       <p>
-        ✓ Discordアカウント認証<br>
-        ✓ サーバーへの自動参加<br>
-        ✓ ロールの自動付与
+        ✓ Discordのサーバー認証<br>
+        ✓ ロールの付与
       </p>
     </div>
 
@@ -206,12 +205,11 @@
     </button>
 
     <div class="footer">
-      このウィンドウは安全に閉じることができます
-    </div>
+      このウィンドウなんもないから閉じてね！
+        </div>
   </div>
 
   <script>
-    // URLパラメータからユーザー名を取得
     const urlParams = new URLSearchParams(window.location.search);
     const username = urlParams.get('user');
 
@@ -220,7 +218,6 @@
     }
 
     function closeWindow() {
-      // ウィンドウを閉じる試み
       window.close();
 
       // 閉じられない場合の代替メッセージ
@@ -234,7 +231,7 @@
     // 5秒後に自動的に閉じる試み
     setTimeout(() => {
       const button = document.querySelector('.close-button');
-      let countdown = 3;
+      let countdown = 10;
       button.textContent = `${countdown}秒後に閉じます...`;
 
       const interval = setInterval(() => {
