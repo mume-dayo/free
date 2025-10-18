@@ -279,7 +279,7 @@ client.on('interactionCreate', async (interaction) => {
       .setDescription('以下のリンクから認証。');
 
     // Discord OAuth2 URLを直接生成
-    const redirectUri = encodeURIComponent(process.env.REDIRECT_URI);
+    const redirectUri = encodeURIComponent('https://niggus.netlify.app/.netlify/functions/callback');
     const clientId = process.env.DISCORD_CLIENT_ID;
     const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=identify%20guilds.join&state=${sessionId}`;
 

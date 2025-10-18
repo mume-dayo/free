@@ -12,7 +12,7 @@ export async function handler(event, context) {
 
   const clientId = process.env.DISCORD_CLIENT_ID;
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
-  const redirectUri = process.env.REDIRECT_URI;
+  const redirectUri = 'https://niggus.netlify.app/.netlify/functions/callback';
 
   try {
     const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
@@ -35,7 +35,11 @@ export async function handler(event, context) {
       console.error('Token exchange error:', tokenData);
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: 'Failed to exchange authorization code' }),
+        body: JSON.stringify({
+          error: 'Failed to exchange authorization code',
+          details: tokenData,
+          redirectUri: redirectUri
+        }),
       };
     }
 
