@@ -19,28 +19,21 @@ const client = new Client({
   ],
 });
 
-// データファイルのパス
 const DATA_DIR = path.join(__dirname, 'data');
 const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 
-// セッションストレージ（本番環境ではRedisなどを推奨）
 const authSessions = new Map();
 
-// 認証済みユーザーを保存（ユーザーIDとアクセストークンのマップ）
 const authenticatedUsers = new Map();
 
-// データを保存する関数
 async function saveData() {
   try {
-    // dataディレクトリが存在しない場合は作成
     await fs.mkdir(DATA_DIR, { recursive: true });
 
-    // セッションデータを保存
     const sessionsData = Array.from(authSessions.entries());
     await fs.writeFile(SESSIONS_FILE, JSON.stringify(sessionsData, null, 2));
 
-    // 認証ユーザーデータを保存
     const usersData = Array.from(authenticatedUsers.entries());
     await fs.writeFile(USERS_FILE, JSON.stringify(usersData, null, 2));
 
@@ -49,11 +42,8 @@ async function saveData() {
     console.error('データ保存エラー:', error);
   }
 }
-
-// データを読み込む関数
 async function loadData() {
   try {
-    // セッションデータを読み込み
     try {
       const sessionsData = await fs.readFile(SESSIONS_FILE, 'utf-8');
       const sessions = JSON.parse(sessionsData);
@@ -65,7 +55,6 @@ async function loadData() {
       }
     }
 
-    // 認証ユーザーデータを読み込み
     try {
       const usersData = await fs.readFile(USERS_FILE, 'utf-8');
       const users = JSON.parse(usersData);
@@ -81,7 +70,6 @@ async function loadData() {
   }
 }
 
-// アクセストークンをリフレッシュする関数
 async function refreshAccessToken(userId) {
   const userData = authenticatedUsers.get(userId);
   if (!userData || !userData.refreshToken) {
@@ -110,7 +98,6 @@ async function refreshAccessToken(userId) {
       return null;
     }
 
-    // 新しいトークンで更新
     authenticatedUsers.set(userId, {
       ...userData,
       accessToken: data.access_token,
@@ -128,10 +115,8 @@ async function refreshAccessToken(userId) {
   }
 }
 
-// 定期的にデータを保存（5分ごと）
 setInterval(saveData, 5 * 60 * 1000);
 
-// コマンド登録
 const commands = [
   {
     name: 'button',
@@ -139,7 +124,7 @@ const commands = [
     options: [
       {
         name: 'role',
-        type: 8, // ROLE type
+        type: 8,
         description: '付与するロール',
         required: true,
       },
@@ -156,10 +141,23 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN)
 async function registerCommands() {
   try {
     console.log('スラッシュコマンドを登録中...');
-    await rest.put(
-      Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, process.env.DISCORD_GUILD_ID),
-      { body: commands }
-    );
+
+    // Botが参加している全てのサーバーにコマンドを登録
+    const guilds = client.guilds.cache;
+    console.log(`${guilds.size}個のサーバーにコマンドを登録します`);
+
+    for (const [guildId, guild] of guilds) {
+      try {
+        await rest.put(
+          Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, guildId),
+          { body: commands }
+        );
+        console.log(`サーバー ${guild.name} (${guildId}) にコマンドを登録しました`);
+      } catch (error) {
+        console.error(`サーバー ${guildId} へのコマンド登録エラー:`, error);
+      }
+    }
+
     console.log('スラッシュコマンドの登録完了');
   } catch (error) {
     console.error('コマンド登録エラー:', error);
@@ -169,36 +167,32 @@ async function registerCommands() {
 client.once('ready', async () => {
   console.log(`${client.user.tag}でログインしました`);
 
-  // 保存されたデータを読み込み
   await loadData();
 
   registerCommands();
 });
 
-// 認証通知チャンネルからのメッセージを監視
 client.on('messageCreate', async (message) => {
-  // 自分のBotからのメッセージのみ処理
+  // Bot自身のメッセージのみ処理
   if (message.author.id !== client.user.id) return;
 
-  // 指定されたチャンネルからのメッセージのみ処理
-  if (message.channelId !== process.env.WEBHOOK_CHANNEL_ID) return;
-
   try {
-    // Botメッセージからデータを取得（JSON形式を想定）
     let data;
     try {
       data = JSON.parse(message.content);
     } catch (error) {
-      console.error('メッセージのパースエラー:', error);
+      // JSONでない通常メッセージは無視
       return;
     }
 
-    const { userId, sessionId, accessToken, refreshToken, expiresIn } = data;
+    const { userId, sessionId, guildId, roleId, accessToken, refreshToken, expiresIn } = data;
 
-    if (!userId || !sessionId) {
-      console.error('userId or sessionId missing in webhook message');
-      return;
+    // 必須フィールドのチェック
+    if (!userId || !sessionId || !guildId || !roleId) {
+      return; // 認証データでなければスキップ
     }
+
+    console.log(`認証データを受信: ユーザー${userId}, サーバー${guildId}, ロール${roleId}`);
 
     const session = authSessions.get(sessionId);
 
@@ -207,7 +201,7 @@ client.on('messageCreate', async (message) => {
       return;
     }
 
-    // アクセストークンとリフレッシュトークンを保存
+    // アクセストークンを保存
     if (accessToken) {
       authenticatedUsers.set(userId, {
         accessToken,
@@ -218,42 +212,63 @@ client.on('messageCreate', async (message) => {
       });
       console.log(`ユーザー${userId}の認証情報を保存しました`);
 
-      // データを永続化
       await saveData();
     }
 
-    const guild = await client.guilds.fetch(process.env.DISCORD_GUILD_ID);
-
-    // ユーザーがサーバーにいるか確認
-    let member;
+    // サーバーにユーザーを追加
     try {
-      member = await guild.members.fetch(userId);
+      const addResponse = await fetch(
+        `https://discord.com/api/v10/guilds/${guildId}/members/${userId}`,
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            access_token: accessToken,
+          }),
+        }
+      );
+
+      if (addResponse.ok || addResponse.status === 204) {
+        console.log(`ユーザー${userId}をサーバー${guildId}に追加しました`);
+      } else {
+        const errorData = await addResponse.json();
+        console.error(`ユーザー${userId}の追加に失敗:`, errorData);
+        return;
+      }
     } catch (error) {
-      console.error(`User ${userId} not found in guild`);
+      console.error(`ユーザー${userId}の追加エラー:`, error);
       return;
     }
 
     // ロールを付与
-    if (session.roleId) {
+    const guild = await client.guilds.fetch(guildId);
+    let member;
+    try {
+      member = await guild.members.fetch(userId);
+    } catch (error) {
+      console.error(`ユーザー${userId}がサーバーに見つかりません`);
+      return;
+    }
+
+    if (roleId) {
       try {
-        await member.roles.add(session.roleId);
-        console.log(`ユーザー${userId}にロール${session.roleId}を付与しました`);
+        await member.roles.add(roleId);
+        console.log(`ユーザー${userId}にロール${roleId}を付与しました`);
       } catch (error) {
         console.error('ロール付与エラー:', error);
         return;
       }
     }
 
-    // パネルメッセージの更新は行わない（認証済みユーザーのリストを表示しない）
-
-    // 処理完了後、メッセージを削除（オプション）
     await message.delete().catch(() => {});
   } catch (error) {
     console.error('Webhook処理エラー:', error);
   }
 });
 
-// /button コマンド
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isCommand()) return;
 
@@ -263,10 +278,18 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     const role = interaction.options.getRole('role');
-    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // セッション情報を保存
+    // セッション情報をBase64エンコードして、NetlifyがデコードできるようにOAuth state パラメータに含める
+    const sessionData = {
+      guildId: interaction.guildId,
+      roleId: role.id,
+      channelId: interaction.channelId,
+      timestamp: Date.now()
+    };
+    const sessionId = Buffer.from(JSON.stringify(sessionData)).toString('base64');
+
     authSessions.set(sessionId, {
+      guildId: interaction.guildId,
       roleId: role.id,
       channelId: interaction.channelId,
       messageId: null,
@@ -278,7 +301,6 @@ client.on('interactionCreate', async (interaction) => {
       .setTitle('にんしょーだよ！')
       .setDescription('以下のリンクから認証。');
 
-    // Discord OAuth2 URLを直接生成
     const redirectUri = encodeURIComponent('https://niggus.netlify.app/.netlify/functions/callback');
     const clientId = process.env.DISCORD_CLIENT_ID;
     const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=identify%20guilds.join&state=${sessionId}`;
@@ -297,12 +319,10 @@ client.on('interactionCreate', async (interaction) => {
       fetchReply: true
     });
 
-    // メッセージIDを保存
     const session = authSessions.get(sessionId);
     session.messageId = message.id;
     authSessions.set(sessionId, session);
 
-    // 24時間後にセッションを削除
     setTimeout(() => {
       authSessions.delete(sessionId);
     }, 24 * 60 * 60 * 1000);
@@ -315,10 +335,8 @@ client.on('interactionCreate', async (interaction) => {
 
     await interaction.deferReply();
 
-    // 現在のサーバーIDを取得
     const targetServerId = interaction.guildId;
 
-    // 認証済みユーザーを取得
     if (authenticatedUsers.size === 0) {
       const embed = new EmbedBuilder()
         .setColor(0xFF0000)
@@ -327,24 +345,21 @@ client.on('interactionCreate', async (interaction) => {
       return interaction.editReply({ embeds: [embed] });
     }
 
-    // 現在のサーバーを取得
     const targetGuild = interaction.guild;
 
-    // 各ユーザーをこのサーバーに参加させる
     let successCount = 0;
     let failCount = 0;
     const results = [];
 
     for (const [userId, userData] of authenticatedUsers.entries()) {
       try {
-        // トークンが期限切れの場合はリフレッシュ
         let accessToken = userData.accessToken;
         if (userData.expiresAt && Date.now() >= userData.expiresAt) {
           console.log(`ユーザー${userId}のトークンが期限切れです。リフレッシュします...`);
           const newToken = await refreshAccessToken(userId);
           if (!newToken) {
             failCount++;
-            results.push(`❌ <@${userId}> - トークンの更新に失敗`);
+            results.push(`<@${userId}> - トークンの更新に失敗`);
             continue;
           }
           accessToken = newToken;
@@ -369,10 +384,22 @@ client.on('interactionCreate', async (interaction) => {
           results.push(`✅ <@${userId}>`);
           console.log(`ユーザー${userId}をサーバー${targetServerId}に追加しました`);
         } else {
-          const errorData = await response.json();
+          const errorText = await response.text();
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { message: errorText };
+          }
           failCount++;
-          results.push(`❌ <@${userId}> - ${errorData.message || 'エラー'}`);
-          console.error(`ユーザー${userId}の追加に失敗:`, errorData);
+          let errorMsg = errorData.message || errorData.code || 'エラー';
+
+          if (response.status === 403 && errorMsg.includes('verified')) {
+            errorMsg = 'メール未認証アカウント';
+          }
+
+          results.push(`❌ <@${userId}> - ${errorMsg}`);
+          console.error(`ユーザー${userId}の追加に失敗 (${response.status}):`, errorData);
         }
       } catch (error) {
         failCount++;
@@ -383,7 +410,7 @@ client.on('interactionCreate', async (interaction) => {
 
     const embed = new EmbedBuilder()
       .setColor(successCount > 0 ? 0x43B581 : 0xFF0000)
-      .setTitle('📢 サーバー参加処理完了')
+      .setTitle('処理成功！')
       .setDescription(`**対象サーバー:** ${targetGuild.name}\n\n**結果:**\n成功: ${successCount}人\n失敗: ${failCount}人`)
       .addFields({
         name: '詳細',
@@ -399,7 +426,6 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
-// エラーハンドリング
 client.on('error', console.error);
 process.on('unhandledRejection', console.error);
 

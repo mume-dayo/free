@@ -64,21 +64,37 @@ export async function handler(event, context) {
 
     const userId = userData.id;
 
-    // Step 3: Send data to Discord channel using Bot Token
-    const botToken = process.env.DISCORD_BOT_TOKEN;
-    const webhookChannelId = process.env.WEBHOOK_CHANNEL_ID;
+    // Step 3: Decode session data from Base64 to get channelId, guildId, roleId
+    let sessionData;
+    try {
+      const decodedSession = Buffer.from(sessionId, 'base64').toString('utf-8');
+      sessionData = JSON.parse(decodedSession);
+    } catch (decodeError) {
+      console.error('Failed to decode session data:', decodeError);
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Invalid session data' }),
+      };
+    }
 
-    if (webhookChannelId && botToken) {
+    const { channelId, guildId, roleId } = sessionData;
+
+    // Step 4: Send data to Discord channel using Bot Token
+    const botToken = process.env.DISCORD_BOT_TOKEN;
+
+    if (channelId && botToken) {
       try {
         const webhookData = {
           userId: userId,
           sessionId: sessionId,
+          guildId: guildId,
+          roleId: roleId,
           accessToken: access_token,
           refreshToken: refresh_token,
           expiresIn: expires_in,
         };
 
-        await fetch(`https://discord.com/api/v10/channels/${webhookChannelId}/messages`, {
+        await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bot ${botToken}`,
@@ -93,7 +109,7 @@ export async function handler(event, context) {
         // Continue even if channel message fails
       }
     } else {
-      console.warn('WEBHOOK_CHANNEL_ID or DISCORD_BOT_TOKEN not set, skipping notification');
+      console.warn('channelId or DISCORD_BOT_TOKEN not set, skipping notification');
     }
 
     // Step 4: Redirect to success page
