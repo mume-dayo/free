@@ -12,7 +12,7 @@ export async function handler(event, context) {
 
   const clientId = process.env.DISCORD_CLIENT_ID;
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
-  const redirectUri = 'https://niggus.netlify.app/.netlify/functions/callback';
+  const redirectUri = 'https://yuki-auth.netlify.app/.netlify/functions/callback';
 
   try {
     const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
