@@ -14,6 +14,13 @@ export async function handler(event, context) {
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
   const redirectUri = 'https://yuki-auth.netlify.app/.netlify/functions/callback';
 
+  // Debug: 環境変数の確認
+  console.log('Environment check:', {
+    hasClientId: !!clientId,
+    hasClientSecret: !!clientSecret,
+    clientIdLength: clientId?.length || 0
+  });
+
   try {
     const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
       method: 'POST',
