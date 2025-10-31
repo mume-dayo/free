@@ -172,6 +172,19 @@ client.once('ready', async () => {
   registerCommands();
 });
 
+// 新しいサーバーに参加したときにコマンドを登録
+client.on('guildCreate', async (guild) => {
+  try {
+    await rest.put(
+      Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, guild.id),
+      { body: commands }
+    );
+    console.log(`サーバー ${guild.name} (${guild.id}) にコマンドを登録しました`);
+  } catch (error) {
+    console.error(`サーバー ${guild.id} へのコマンド登録エラー:`, error);
+  }
+});
+
 client.on('messageCreate', async (message) => {
   // Bot自身のメッセージのみ処理
   if (message.author.id !== client.user.id) return;
