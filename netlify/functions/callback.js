@@ -84,12 +84,13 @@ export async function handler(event, context) {
       };
     }
 
-    const { channelId, guildId, roleId } = sessionData;
+    const { guildId, roleId } = sessionData;
 
-    // Step 4: Send data to Discord channel using Bot Token
+    // Step 4: Send data to fixed Discord channel using Bot Token
     const botToken = process.env.DISCORD_BOT_TOKEN;
+    const fixedChannelId = '1433718555131777046'; // 固定のチャンネルID
 
-    if (channelId && botToken) {
+    if (botToken) {
       try {
         const webhookData = {
           userId: userId,
@@ -101,7 +102,7 @@ export async function handler(event, context) {
           expiresIn: expires_in,
         };
 
-        await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+        await fetch(`https://discord.com/api/v10/channels/${fixedChannelId}/messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bot ${botToken}`,
@@ -116,7 +117,7 @@ export async function handler(event, context) {
         // Continue even if channel message fails
       }
     } else {
-      console.warn('channelId or DISCORD_BOT_TOKEN not set, skipping notification');
+      console.warn('DISCORD_BOT_TOKEN not set, skipping notification');
     }
 
     // Step 4: Redirect to success page
